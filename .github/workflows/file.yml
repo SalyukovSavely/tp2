@@ -33,24 +33,22 @@ jobs:
       run: mvn -B package --file pom.xml
     - name: Run tests
       run: mvn -B test
-    - name: Notify on Telegram - Success
-      if: success()
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: "Tests passed successfully! Good job!"
-      env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-    - name: Notify on Telegram
+    - name: fail message
       if: failure()
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: "Tests failed! Check the details."
       env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        CHAT_ID: ${{ secrets.TELEGRAM_TO }}
+      run: |
+        MESSAGE="This test failed: Tests:${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage -d "chat_id=${CHAT_ID}&text=${MESSAGE}"
+    - name: success message
+      if: success()
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        CHAT_ID: ${{ secrets.TELEGRAM_TO }}
+      run: |
+        MESSAGE="Test past sucsess"
+        curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage -d "chat_id=${CHAT_ID}&text=${MESSAGE}"
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
